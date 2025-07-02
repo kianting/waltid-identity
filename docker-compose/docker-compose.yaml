@@ -1,4 +1,16 @@
 services:
+  mitmproxy:
+    image: mitmproxy/mitmproxy
+    command: mitmweb --mode transparent --showhost --web-port $MITMPROXY_GUI_PORT --listen-port $MITMPROXY_PORT --web-host 0.0.0.0 --set web_password='mitm'
+    env_file:
+      - .env    
+    profiles:
+      - apps
+      - identity
+      - all
+    volumes:
+      - ./mitm:/home/mitmproxy/.mitmproxy
+
   wallet-api:
     platform: linux/x86_64
     image: docker.io/waltid/wallet-api:${VERSION_TAG:-latest}
@@ -15,6 +27,8 @@ services:
         condition: service_healthy
       caddy:
         condition: service_started
+      mitmproxy: 
+        condition: service_started
     env_file:
       - .env
     extra_hosts:
@@ -22,7 +36,12 @@ services:
       - "waltid.enterprise.localhost:host-gateway"
     volumes:
       - ./wallet-api/config:/waltid-wallet-api/config
+      - ./wallet-api/walt.yaml:/waltid-wallet-api/walt.yaml
       - ./wallet-api/data:/waltid-wallet-api/data
+    environment:
+      HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+      HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+
 
   issuer-api:
     platform: linux/x86_64
@@ -37,10 +56,14 @@ services:
       dockerfile: waltid-services/waltid-issuer-api/Dockerfile
     depends_on:
       - caddy
+      - mitmproxy
     env_file:
       - .env
     volumes:
       - ./issuer-api/config:/waltid-issuer-api/config
+    environment:
+      HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+      HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
 
   verifier-api:
     platform: linux/x86_64
@@ -55,12 +78,15 @@ services:
       dockerfile: waltid-services/waltid-verifier-api/Dockerfile
     depends_on:
       - caddy
+      - mitmproxy
     env_file:
       - .env
     volumes:
       - ./verifier-api/config:/waltid-verifier-api/config
     environment:
       OPA_SERVER_URL: "http://opa-server:8181"
+      HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+      HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
 
   waltid-demo-wallet:
     platform: linux/x86_64
@@ -76,10 +102,13 @@ services:
     depends_on:
       - wallet-api
       - caddy
+      - mitmproxy
     environment:
       NUXT_PUBLIC_ISSUER_CALLBACK_URL: "http://localhost:$DEMO_WALLET_FRONTEND_PORT"
       NUXT_PUBLIC_DEV_WALLET_URL: "http://localhost:$DEV_WALLET_FRONTEND_PORT"
       PORT: $DEMO_WALLET_FRONTEND_PORT
+      HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+      HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
 
   waltid-dev-wallet:
     platform: linux/x86_64
@@ -95,10 +124,13 @@ services:
     depends_on:
       - wallet-api
       - caddy
+      - mitmproxy
     environment:
       NUXT_PUBLIC_ISSUER_CALLBACK_URL: "http://localhost:$DEV_WALLET_FRONTEND_PORT"
       NUXT_PUBLIC_DEMO_WALLET_URL: "http://localhost:$DEMO_WALLET_FRONTEND_PORT"
       PORT: $DEV_WALLET_FRONTEND_PORT
+      HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+      HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
 
   web-portal:
     platform: linux/x86_64
@@ -113,12 +145,15 @@ services:
       dockerfile: waltid-applications/waltid-web-portal/Dockerfile
     depends_on:
       - caddy
+      - mitmproxy
     environment:
       NEXT_PUBLIC_VC_REPO: "http://host.docker.internal:$VC_REPO_PORT"
       NEXT_PUBLIC_ISSUER: "http://host.docker.internal:$ISSUER_API_PORT"
       NEXT_PUBLIC_VERIFIER: "http://host.docker.internal:$VERIFIER_API_PORT"
       NEXT_PUBLIC_WALLET: "http://host.docker.internal:$DEMO_WALLET_FRONTEND_PORT"
       PORT: $WEB_PORTAL_PORT
+      HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+      HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
 
   vc-repo:
     platform: linux/x86_64
@@ -130,6 +165,7 @@ services:
     pull_policy: always
     depends_on:
       - caddy
+      - mitmproxy
     environment:
       PORT: $VC_REPO_PORT
 
@@ -208,6 +244,10 @@ services:
     cap_add:
       - NET_ADMIN
     ports:
+      - target: "$MITMPROXY_GUI_PORT"
+        published: $MITMPROXY_GUI_PORT # MITM Proxy GUI
+        protocol: tcp
+        mode: host
 
       - target: "$WALLET_BACKEND_PORT"
         published: $WALLET_BACKEND_PORT # wallet-api
@@ -248,9 +288,12 @@ services:
         published: $PG_ADMIN_PORT # pg-admin
         protocol: tcp
         mode: host
-
+    # environment:
+    #   HTTP_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
+    #   HTTPS_PROXY: "http://mitmproxy:$MITMPROXY_PORT"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
+
 volumes:
   wallet-api-db:
   vault_data:
