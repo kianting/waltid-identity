@@ -1,4 +1,5 @@
 services:
+# addiing in mitm
   wallet-api:
     platform: linux/x86_64
     image: docker.io/waltid/wallet-api:${VERSION_TAG:-latest}
