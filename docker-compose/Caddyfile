@@ -4,9 +4,9 @@
 }
 
 # MITM PROXY GUI
-// :{$MITMPROXY_GUI_PORT} {
-//     reverse_proxy http://mitmproxy:{$MITMPROXY_GUI_PORT}
-// }
+# :{$MITMPROXY_GUI_PORT} {
+#     reverse_proxy http://mitmproxy:{$MITMPROXY_GUI_PORT}
+# }
 
 # Wallet API
 :{$WALLET_BACKEND_PORT} {

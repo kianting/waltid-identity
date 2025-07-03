@@ -1,24 +1,4 @@
 services:
-  mitmproxy:
-    image: mitmproxy/mitmproxy:latest
-    command: >
-      mitmweb --mode reverse:http://dummy
-              --web-host 0.0.0.0
-              --set web_password='${MITMPASSWD}'
-              --listen-port ${MITMPROXY_PORT}
-              --web-port ${MITMPROXY_GUI_PORT}
-              --scripts /home/mitmproxy/router.py
-    depends_on:
-      - caddy              
-    volumes:
-      - ./router.py:/home/mitmproxy/router.py
-    ports:
-      - "${MITMPROXY_GUI_PORT}:${MITMPROXY_GUI_PORT}"   # mitmweb GUI exposed on host
-      - "${MITMPROXY_PORT}:${MITMPROXY_PORT}"   # mitmproxy reverse proxy port for Caddy to target
-    env_file:
-      - .env
-    restart: unless-stopped
-
   wallet-api:
     platform: linux/x86_64
     image: docker.io/waltid/wallet-api:${VERSION_TAG:-latest}
