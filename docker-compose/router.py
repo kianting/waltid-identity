@@ -1,5 +1,6 @@
 import os
 from mitmproxy import http
+from mitmproxy import ctx
 
 # Read env vars from container environment
 WALLET_BACKEND_PORT = os.getenv("WALLET_BACKEND_PORT", "7001")
@@ -40,20 +41,33 @@ ROUTE_MAP = {
     }
 }
 
+def load(l):
+    ctx.log.info("[MITM] router.py loaded")
+
 def request(flow: http.HTTPFlow) -> None:
+    ctx.log.info(f"[MITM] Incoming request: {flow.request.method} {flow.request.pretty_url}")
     port = flow.request.headers.get("X-Target-Port")
     path = flow.request.path
+    host_header = flow.request.headers.get("Host", "")
+
+    #if ":" in host_header:
+    #    port = host_header.split(":")[1]
+    ctx.log.info(f"[MITM] --> Incoming request:")
+    ctx.log.info(f"        URL      : {flow.request.pretty_url}")
+    ctx.log.info(f"        Host     : {host_header}")
+    ctx.log.info(f"        Path     : {path}")
+    ctx.log.info(f"        X-Target-Port: {port}")    
 
     if not port or port not in ROUTE_MAP:
+        ctx.log.info(f"[MITM] !! No routing rule for port: {port} — passing through.")
         return
 
     for prefix, target in ROUTE_MAP[port].items():
-        if prefix == "default":
-            continue
-        if path.startswith(prefix):
+        if prefix != "default" and path.startswith(prefix):
             host, backend_port = target.split(":")
             flow.request.host = host
             flow.request.port = int(backend_port)
+            ctx.log.info(f"[MITM] --> Matched prefix '{prefix}', forwarding to {host}:{backend_port}")
             return
 
     default_target = ROUTE_MAP[port].get("default")
@@ -61,3 +75,4 @@ def request(flow: http.HTTPFlow) -> None:
         host, backend_port = default_target.split(":")
         flow.request.host = host
         flow.request.port = int(backend_port)
+        ctx.log.info(f"[MITM] --> Default route, forwarding to {host}:{backend_port}")

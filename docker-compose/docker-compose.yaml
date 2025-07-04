@@ -2,14 +2,12 @@ services:
   mitmproxy:
     image: mitmproxy/mitmproxy:latest
     command: >
-      mitmweb --mode reverse:http://dummy
+      mitmweb --mode reverse:http://example.com
               --web-host 0.0.0.0
               --set web_password='${MITMPASSWD}'
               --listen-port ${MITMPROXY_PORT}
               --web-port ${MITMPROXY_GUI_PORT}
-              --scripts /home/mitmproxy/router.py
-    depends_on:
-      - caddy              
+              --scripts /home/mitmproxy/router.py           
     volumes:
       - ./router.py:/home/mitmproxy/router.py
     ports:
@@ -227,6 +225,8 @@ services:
       - .env
     cap_add:
       - NET_ADMIN
+    depends_on:
+      - mitmproxy
     ports:
 
       - target: "$WALLET_BACKEND_PORT"
