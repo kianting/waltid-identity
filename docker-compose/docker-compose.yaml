@@ -15,7 +15,6 @@ services:
       - "${MITMPROXY_PORT}:${MITMPROXY_PORT}"   # mitmproxy reverse proxy port for Caddy to target
     env_file:
       - .env
-    restart: unless-stopped
 
   wallet-api:
     platform: linux/x86_64
@@ -33,6 +32,8 @@ services:
         condition: service_healthy
       caddy:
         condition: service_started
+      mitmproxy:
+        condition: service_started        
     env_file:
       - .env
     extra_hosts:
@@ -54,6 +55,7 @@ services:
       context: ../
       dockerfile: waltid-services/waltid-issuer-api/Dockerfile
     depends_on:
+      - mitmproxy
       - caddy
     env_file:
       - .env
@@ -72,6 +74,7 @@ services:
       context: ../
       dockerfile: waltid-services/waltid-verifier-api/Dockerfile
     depends_on:
+      - mitmproxy
       - caddy
     env_file:
       - .env
@@ -94,6 +97,7 @@ services:
     depends_on:
       - wallet-api
       - caddy
+      - mitmproxy
     environment:
       NUXT_PUBLIC_ISSUER_CALLBACK_URL: "http://localhost:$DEMO_WALLET_FRONTEND_PORT"
       NUXT_PUBLIC_DEV_WALLET_URL: "http://localhost:$DEV_WALLET_FRONTEND_PORT"
@@ -113,6 +117,7 @@ services:
     depends_on:
       - wallet-api
       - caddy
+      - mitmproxy
     environment:
       NUXT_PUBLIC_ISSUER_CALLBACK_URL: "http://localhost:$DEV_WALLET_FRONTEND_PORT"
       NUXT_PUBLIC_DEMO_WALLET_URL: "http://localhost:$DEMO_WALLET_FRONTEND_PORT"
@@ -131,6 +136,7 @@ services:
       dockerfile: waltid-applications/waltid-web-portal/Dockerfile
     depends_on:
       - caddy
+      - mitmproxy
     environment:
       NEXT_PUBLIC_VC_REPO: "http://host.docker.internal:$VC_REPO_PORT"
       NEXT_PUBLIC_ISSUER: "http://host.docker.internal:$ISSUER_API_PORT"
@@ -148,6 +154,7 @@ services:
     pull_policy: always
     depends_on:
       - caddy
+      - mitmproxy
     environment:
       PORT: $VC_REPO_PORT
 
