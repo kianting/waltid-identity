@@ -2,7 +2,7 @@ services:
   mitmproxy:
     image: mitmproxy/mitmproxy:latest
     command: >
-      mitmweb --mode reverse:http://example.com
+      mitmweb --mode reverse:http://google.com
               --web-host 0.0.0.0
               --set web_password='${MITMPASSWD}'
               --listen-port ${MITMPROXY_PORT}
