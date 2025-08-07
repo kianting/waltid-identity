@@ -4,6 +4,7 @@ import id.walt.did.dids.resolver.UniresolverResolver
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -21,6 +22,7 @@ class UniResolverTest {
     @ParameterizedTest
     @MethodSource
     @EnabledIf("isUniresolverAvailable")
+    @Disabled("uniresolver failing to resolve test dids")
     fun `given a did String, when calling resolve, then the result is a valid did document`(
         did: String, document: String,
     ) = runTest {
@@ -33,6 +35,7 @@ class UniResolverTest {
     @ParameterizedTest
     @MethodSource
     @EnabledIf("isUniresolverAvailable")
+    @Disabled("uniresolver failing to resolve test dids")
     fun `given a did String, when calling resolveToKey, then the result is valid key`(
         did: String, key: String,
     ) = runTest {
@@ -59,7 +62,7 @@ class UniResolverTest {
                     ).path.let { File(it).readText() }
                         .replace("[\\s\\n\\r]".toRegex(), ""),
                 ),
-                //disable flaky test
+// disable flaky test
 //                arguments(
 //                    "did:io:0x476c81C27036D05cB5ebfe30ae58C23351a61C4A",
 //                    URI(
@@ -88,7 +91,7 @@ class UniResolverTest {
                     ).path.let { File(it).readText() }
                         .replace("[\\s\\n\\r]".toRegex(), ""),
                 ),
-                //disable flaky test
+// disable flaky test
 //                arguments(
 //                    "did:io:0x476c81C27036D05cB5ebfe30ae58C23351a61C4A",
 //                    URI(

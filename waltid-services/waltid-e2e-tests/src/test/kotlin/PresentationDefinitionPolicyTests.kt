@@ -1,8 +1,10 @@
 @file:OptIn(ExperimentalUuidApi::class)
 
-import id.walt.commons.testing.E2ETest.test
+import id.walt.commons.testing.E2ETest
 import id.walt.crypto.keys.KeyGenerationRequest
 import id.walt.crypto.keys.KeyType
+import id.walt.crypto.utils.UuidUtils.randomUUID
+import id.walt.crypto.utils.UuidUtils.randomUUIDString
 import id.walt.verifier.oidc.PresentationSessionInfo
 import id.walt.webwallet.db.models.AccountWalletListing
 import id.walt.webwallet.db.models.WalletCredential
@@ -22,10 +24,12 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-class PresentationDefinitionPolicyTests {
+@OptIn(ExperimentalUuidApi::class)
 
-    private val email = "${Uuid.random()}@mail.com"
-    private val password = Uuid.random().toString()
+class PresentationDefinitionPolicyTests(private val e2e: E2ETest) {
+
+    private val email = "${randomUUID()}@mail.com"
+    private val password = randomUUIDString()
 
 
     private lateinit var walletUuid: Uuid
@@ -527,7 +531,7 @@ class PresentationDefinitionPolicyTests {
         cleanup: suspend () -> Unit,
     ) {
         setup()
-        test(
+        e2e.test(
             name = description,
         ) {
             evaluate()

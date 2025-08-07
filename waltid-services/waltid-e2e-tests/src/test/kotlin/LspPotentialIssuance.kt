@@ -3,12 +3,12 @@ import org.cose.java.OneKey
 import cbor.Cbor
 import com.nimbusds.jose.jwk.ECKey
 import id.walt.commons.interop.LspPotentialInterop
-import id.walt.commons.testing.E2ETest.getBaseURL
-import id.walt.commons.testing.E2ETest.test
+import id.walt.commons.testing.E2ETest
 import id.walt.crypto.keys.KeyGenerationRequest
 import id.walt.crypto.keys.KeyManager
 import id.walt.crypto.keys.KeyType
 import id.walt.crypto.utils.Base64Utils.base64UrlDecode
+import id.walt.crypto.utils.UuidUtils.randomUUIDString
 import id.walt.mdoc.COSECryptoProviderKeyInfo
 import id.walt.mdoc.SimpleCOSECryptoProvider
 import id.walt.mdoc.cose.COSESign1
@@ -29,7 +29,6 @@ import id.walt.oid4vc.requests.CredentialRequest
 import id.walt.oid4vc.requests.TokenRequest
 import id.walt.oid4vc.responses.CredentialResponse
 import id.walt.oid4vc.responses.TokenResponse
-import id.walt.oid4vc.util.randomUUID
 import id.walt.sdjwt.JWTVCIssuerMetadata
 import id.walt.sdjwt.SDJwtVC
 import id.walt.verifier.lspPotential.LspPotentialVerificationInterop
@@ -53,10 +52,10 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.*
 
-class LspPotentialIssuance(val client: HttpClient) {
+class LspPotentialIssuance(private val e2e: E2ETest, val client: HttpClient) {
 
     @OptIn(ExperimentalEncodingApi::class, ExperimentalSerializationApi::class)
-    suspend fun testTrack1() = test("test track 1") {
+    suspend fun testTrack1() = e2e.test("test track 1") {
         // ### steps 1-6
         val offerResp = client.get("/lsp-potential/lspPotentialCredentialOfferT1")
         println("Offer resp: $offerResp")
@@ -87,7 +86,7 @@ class LspPotentialIssuance(val client: HttpClient) {
         // ### step 11: confirm issuance (nothing to do)
 
         // ### step 12-15: authorization
-        val codeVerifier = randomUUID()
+        val codeVerifier = randomUUIDString()
 
         val codeChallenge =
             codeVerifier.let { Base64.UrlSafe.encode(SHA256().digest(it.toByteArray(Charsets.UTF_8))).trimEnd('=') }
@@ -201,8 +200,8 @@ class LspPotentialIssuance(val client: HttpClient) {
                 setBody(credReq.toJSON())
             }.body<JsonObject>().let { CredentialResponse.fromJSON(it) }
             assertTrue(credResp.isSuccess)
-            assertContains(credResp.customParameters.keys, "credential_encoding")
-            assertEquals("issuer-signed", credResp.customParameters["credential_encoding"]!!.jsonPrimitive.content)
+            assertContains(credResp.customParameters!!.keys, "credential_encoding")
+            assertEquals("issuer-signed", credResp.customParameters!!["credential_encoding"]!!.jsonPrimitive.content)
             assertNotNull(credResp.credential)
             val mdoc = MDoc(
                 credReq.docType!!.toDataElement(), IssuerSigned.fromMapElement(
@@ -235,7 +234,7 @@ class LspPotentialIssuance(val client: HttpClient) {
     }
 
     @OptIn(ExperimentalEncodingApi::class)
-    suspend fun testTrack2() = test("test track 2") {
+    suspend fun testTrack2() = e2e.test("test track 2") {
         // ### steps 1-6
         val offerResp = client.get("/lsp-potential/lspPotentialCredentialOfferT2")
         assertEquals(HttpStatusCode.OK, offerResp.status)
@@ -269,12 +268,12 @@ class LspPotentialIssuance(val client: HttpClient) {
         println("Offered credentials: $offeredCredentials")
         val offeredCredential = offeredCredentials.first()
         assertEquals(CredentialFormat.sd_jwt_vc, offeredCredential.format)
-        assertEquals("${getBaseURL()}/identity_credential", offeredCredential.vct)
+        assertEquals("${e2e.getBaseURL()}/identity_credential", offeredCredential.vct)
 
         // ### step 11: confirm issuance (nothing to do)
 
         // ### step 12-15: authorization
-        val codeVerifier = randomUUID()
+        val codeVerifier = randomUUIDString()
 
         val codeChallenge =
             codeVerifier.let { Base64.UrlSafe.encode(SHA256().digest(it.toByteArray(Charsets.UTF_8))).trimEnd('=') }

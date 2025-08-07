@@ -5,13 +5,13 @@ import id.walt.did.dids.DidService
 import id.walt.issuer.issuance.OidcApi.buildCredentialOfferUri
 import id.walt.issuer.issuance.OidcApi.buildOfferUri
 import id.walt.issuer.issuance.OidcApi.getFormatByCredentialConfigurationId
+import id.walt.issuer.issuance.openapi.issuerapi.IssuanceRequestErrors
 import id.walt.issuer.issuance.openapi.issuerapi.JwtDocs.getJwtBatchDocs
 import id.walt.issuer.issuance.openapi.issuerapi.JwtDocs.getJwtDocs
 import id.walt.issuer.issuance.openapi.issuerapi.MdocDocs.getMdocsDocs
+import id.walt.issuer.issuance.openapi.issuerapi.RawJwtDocs
 import id.walt.issuer.issuance.openapi.issuerapi.SdJwtDocs.getSdJwtBatchDocs
 import id.walt.issuer.issuance.openapi.issuerapi.SdJwtDocs.getSdJwtDocs
-import id.walt.issuer.issuance.openapi.issuerapi.IssuanceRequestErrors
-import id.walt.issuer.issuance.openapi.issuerapi.RawJwtDocs
 import id.walt.oid4vc.data.CredentialFormat
 import id.walt.oid4vc.requests.CredentialOfferRequest
 import id.walt.w3c.vc.vcs.W3CVC
@@ -49,6 +49,9 @@ fun createCredentialOfferUri(
                 ) ?: throw IllegalArgumentException("VCT not found") else null
         )
     }
+
+    overwrittenIssuanceRequests.first().standardVersion
+        ?: throw IllegalArgumentException("Attribute [standardVersion] is null")
 
     val issuanceSession = OidcApi.initializeCredentialOffer(
         issuanceRequests = overwrittenIssuanceRequests,
